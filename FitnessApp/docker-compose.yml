@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:16
+    container_name: health_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app123
+      POSTGRES_DB: healthdb
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U app -d healthdb" ]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    container_name: health_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+
+  app:
+    build: .
+    container_name: health_app
+    env_file: .env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3000
+      - GEMINI_API_KEY=AIzaSyCJpCeBNOwMkfVVGnoft1AjA72gfWGayAw
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    command: >
+      sh -c "
+        set -e
+        echo 'Regenerating Prisma Client...' &&
+        npx prisma generate &&
+        if [ -z \"$(ls -A prisma/migrations 2>/dev/null)\" ]; then
+          echo 'No migrations found — running prisma db push' && npx prisma db push;
+        else
+          echo 'Migrations found — running prisma migrate deploy' && npx prisma migrate deploy;
+        fi &&
+        if [ -f prisma/seed.js ]; then
+          echo 'Running JS seed (node prisma/seed.js)...' && node prisma/seed.js;
+        else
+          echo ' prisma/seed.js not found, skipping seed';
+        fi &&
+        echo 'Starting Next.js dev server...' &&
+        npm run dev
+      "
+
+volumes:
+  pgdata:
