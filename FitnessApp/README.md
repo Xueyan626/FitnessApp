@@ -98,4 +98,5 @@ To change ports, modify the `ports` mapping in `docker-compose.yml`.
 
    
 ## Project Structure
-<img width="629" alt="image" src="https://github.sydney.edu.au/xiyu0043/ELEC5620_Group109/assets/23853/18c86b42-d710-4209-8a71-a0d73e905d2f">
+<img width="1258" height="1036" alt="image" src="https://github.com/user-attachments/assets/d4160a64-267f-4936-9075-47ccab41cbba" />
+
